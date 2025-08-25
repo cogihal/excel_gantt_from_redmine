@@ -1,0 +1,91 @@
+#----------
+# Following items are MANDATORY
+#   redmine.url
+#   redmine.project_name
+#   spreadsheet.gannt.start_date
+#   spreadsheet.gannt.end_date
+#----------
+
+redmine.url = "https://www.redmine.org/"
+redmine.project_name = "redmine"
+
+# Set true if this account needs to login to access
+redmine.account.need_login = false
+# Set account info if it needs to login
+# If 'need_login' is true and the account info is "", 
+# an input prompt will be shown to enter the account info at runtime
+redmine.account.username = ""
+redmine.account.password = ""
+
+# Set "" or comment-out if it doesn't need to specify
+redmine.filter.sort             = "id" # Column to sort. Append :desc to invert the order
+redmine.filter.issue_id         = ""   # Find issue or issues by id (separated by ,)
+redmine.filter.query_id         = ""   # Get issues for the given query id
+redmine.filter.parent_id        = ""   # Get issues whose parent issue is given id
+redmine.filter.tracker_id       = ""   # Get issues from the tracker with given id
+redmine.filter.status_id        = ""   # Get issues with given status id
+redmine.filter.author_id        = ""   # Get issues which are authored by the given user id
+redmine.filter.assigned_to_id   = ""   # Get issues which are assigned to the given user id
+redmine.filter.fixed_version_id = ""   # Get issues with given version id
+
+redmine.filter.include_parent = false # Include parent issue even if the parent is not a target
+
+spreadsheet.font_name = "Meiryo UI"
+spreadsheet.tab_title = "modify as you like"
+# If 'tab_title' is not specified, 'project_name' is used instead.
+
+spreadsheet.gantt.start_date = "2025/10/01"
+spreadsheet.gantt.end_date   = "2025/12/31"
+
+holidays = [
+  # Japanese holidays in 2025
+  "2025/01/01", # New Year's Day
+  "2025/01/02", # 
+  "2025/01/03", # 
+  "2025/01/13", # Coming-of-Age Day
+  "2025/02/11", # National Foundation Day
+  "2025/02/23", # The Emperor's Birthday
+  "2025/02/24", # Substitute Public Holiday
+  "2025/03/20", # Vernal Equinox Day
+  "2025/04/29", # Showa Day
+  "2025/05/03", # Constitution Memorial Day
+  "2025/05/04", # Greenery Day
+  "2025/05/05", # Children's Day
+  "2025/05/06", # Substitute Public Holiday
+  "2025/07/21", # Marine Day
+  "2025/08/11", # Mountain Day
+  "2025/09/15", # Respect for the Aged Day
+  "2025/09/23", # Autumnal Equinox Day
+  "2025/10/13", # Sports Day
+  "2025/11/03", # Culture Day
+  "2025/11/23", # Labour Thanksgiving Day
+  "2025/11/24", # Substitute Public Holiday
+  "2025/12/29", # 
+  "2025/12/30", # 
+  "2025/12/31", # 
+
+  # Japanese holidays in 2026
+  "2026/01/01", # New Year's Day
+  "2026/01/02", # 
+  "2026/01/03", # 
+  "2026/01/12", # Coming-of-Age Day
+  "2026/02/11", # National Foundation Day
+  "2026/02/23", # The Emperor's Birthday
+  "2026/03/20", # Vernal Equinox Day
+  "2026/04/29", # Showa Day
+  "2026/05/03", # Constitution Memorial Day
+  "2026/05/04", # Greenery Day
+  "2026/05/05", # Children's Day
+  "2026/05/06", # Substitute Public Holiday
+  "2026/07/20", # Marine Day
+  "2026/08/11", # Mountain Day
+  "2026/09/21", # Respect for the Aged Day
+  "2026/09/22", # Substitute Public Holiday
+  "2026/09/23", # Autumnal Equinox Day
+  "2026/10/12", # Sports Day
+  "2026/11/03", # Culture Day
+  "2026/11/23", # Labour Thanksgiving Day
+  "2026/12/29", # 
+  "2026/12/30", # 
+  "2026/12/31", # 
+]

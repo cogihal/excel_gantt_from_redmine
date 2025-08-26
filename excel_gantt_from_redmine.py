@@ -15,6 +15,7 @@ from openpyxl.utils.cell import get_column_letter
 from redminelib import Redmine
 
 from config import Config
+from issue_dict import IssueData
 from logging_helper import init_logger
 
 # global variables
@@ -145,13 +146,13 @@ def excel_set_gantt_chart_date(ws) -> None:
         d += datetime.timedelta(days=1)
         column += 1
 
-def write_issue(ws, issue, indent: int, row: int) -> int:
+def write_issue(ws, issue_data, indent: int, row: int) -> int:
     """
     Write issue information to the excel worksheet.
 
     Args:
         ws (worksheet): excel worksheet
-        issue (issue): Redmine issue object
+        issue (IssueData): issue object
         indent (int): Indentation level for the issue
         row (int): Current row number in the worksheet
 
@@ -162,20 +163,20 @@ def write_issue(ws, issue, indent: int, row: int) -> int:
     fontname = config.font_name
     linkURLbase = config.link_url
 
-    id = issue.id
+    id = issue_data.id
     if id in registered_id:
         return row
     else:
         registered_id.append(id)
 
     ws.cell(row, 1).number_format = openpyxl.styles.numbers.FORMAT_GENERAL
-    ws.cell(row, 1).value = issue.id
+    ws.cell(row, 1).value = issue_data.id
     ws.cell(row, 1).font = Font(name=fontname, color='0563C1', underline='single')
     ws.cell(row, 1).alignment = Alignment(horizontal='center', vertical='center')
-    ws.cell(row, 1).hyperlink = f'{linkURLbase}{issue.id}'
+    ws.cell(row, 1).hyperlink = f'{linkURLbase}{issue_data.id}'
 
     ws.cell(row, 2).number_format = openpyxl.styles.numbers.FORMAT_GENERAL
-    ws.cell(row, 2).value = issue.subject
+    ws.cell(row, 2).value = issue_data.subject
     ws.cell(row, 2).font = Font(name=fontname)
     ws.cell(row, 2).alignment = Alignment(indent=indent, vertical='center')
     if id not in targeted_id:
@@ -183,37 +184,32 @@ def write_issue(ws, issue, indent: int, row: int) -> int:
         ws.cell(row, 2).fill = PatternFill(patternType='solid', fgColor='D9D9D9')
 
     ws.cell(row, 3).number_format = openpyxl.styles.numbers.FORMAT_GENERAL
-    if hasattr(issue, 'assigned_to'):
-        ws.cell(row, 3).value = issue.assigned_to.name
+    ws.cell(row, 3).value = issue_data.assigned_to if issue_data.assigned_to is not None else ''
     ws.cell(row, 3).font = Font(name=fontname)
     ws.cell(row, 3).alignment = Alignment(horizontal='center', vertical='center')
 
     ws.cell(row, 4).number_format = 'yyyy/mm/dd'
-    if hasattr(issue, 'start_date'):
-        ws.cell(row, 4).value = issue.start_date
+    ws.cell(row, 4).value = issue_data.start_date if issue_data.start_date is not None else ''
     ws.cell(row, 4).font = Font(name=fontname)
     ws.cell(row, 4).alignment = Alignment(horizontal='center', vertical='center')
 
     ws.cell(row, 5).number_format = 'yyyy/mm/dd'
-    if hasattr(issue, 'due_date'):
-        ws.cell(row, 5).value = issue.due_date
+    ws.cell(row, 5).value = issue_data.due_date if issue_data.due_date is not None else ''
     ws.cell(row, 5).font = Font(name=fontname)
     ws.cell(row, 5).alignment = Alignment(horizontal='center', vertical='center')
 
     ws.cell(row, 6).number_format = 'yyyy/mm/dd'
-    if hasattr(issue, 'closed_on'):
-        ws.cell(row, 6).value = issue.closed_on
+    ws.cell(row, 6).value = issue_data.closed_on if issue_data.closed_on is not None else ''
     ws.cell(row, 6).font = Font(name=fontname)
     ws.cell(row, 6).alignment = Alignment(horizontal='center', vertical='center')
 
     ws.cell(row, 7).number_format = openpyxl.styles.numbers.FORMAT_PERCENTAGE
-    if hasattr(issue, 'done_ratio'):
-        ws.cell(row, 7).value = issue.done_ratio / 100
+    ws.cell(row, 7).value = issue_data.done_ratio / 100 if issue_data.done_ratio is not None else ''
     ws.cell(row, 7).font = Font(name=fontname)
     ws.cell(row, 7).alignment = Alignment(horizontal='center', vertical='center')
 
     # If the issue is closed, set the done ratio to 100%
-    if hasattr(issue, 'closed_on') and issue.closed_on is not None:
+    if issue_data.closed_on is not None:
         ws.cell(row, 7).value = 1.0  # 100% complete
 
     return row+1
@@ -304,136 +300,69 @@ def set_conditional_format(ws, min_row: int, max_row: int) -> None:
             c += 1
         r += 1
 
-def get_issue(redmine, id):
-    """
-    Get issue from Redmine with caching to avoid redundant API calls.
+def get_filter_issues(redmine, filter: dict) -> (dict|None):
+    global targeted_id
+    try:
+        # Search filter conditions
+        issues = redmine.issue.filter(**filter)
 
-    Args:
-        redmine (Redmine): Redmine instance
-        id (int): Issue ID
+        issues_dict = dict()
+        for issue in issues:
+            issue_data = IssueData()
+            issue_data.id          = issue.id
+            issue_data.subject     = issue.subject
+            issue_data.assigned_to = issue.assigned_to.name if hasattr(issue, 'assigned_to') else None
+            issue_data.start_date  = issue.start_date if hasattr(issue, 'start_date') else None
+            issue_data.due_date    = issue.due_date if hasattr(issue, 'due_date') else None
+            issue_data.closed_on   = issue.closed_on if hasattr(issue, 'closed_on') else None
+            issue_data.done_ratio  = issue.done_ratio if hasattr(issue, 'done_ratio') else None
+            issue_data.parent_id   = issue.parent.id if hasattr(issue, 'parent') else None
+            issues_dict[issue.id] = issue_data
 
-    Returns:
-        issue: Redmine issue object
-    """
+            targeted_id.append(issue.id)
 
-    global temp_issue
-    if id in temp_issue:
-        return temp_issue[id]
-    issue = redmine.issue.get(id)
-    temp_issue[id] = issue
-    return issue
+        return issues_dict
+    except Exception as e:
+        logger.error(f'Redmine error : {e}')
+        return None
 
-def get_topmost(redmine, issue): # -> issue
-    """
-    Get the topmost parent issue of the given issue.
+def get_ancestor_issues(redmine, issues_dict: dict) -> (dict|None):
+    try:
+        ancestors_dict = dict()
 
-    Args:
-        redmine (Redmine): Redmine instance
-        issue (issue): Redmine issue object
+        for id, issue_data in issues_dict.items():
+            parent_id = issue_data.parent_id
+            if parent_id is not None:
+                if parent_id in issues_dict:
+                    issues_dict[parent_id].children_id.append(id)
+                elif parent_id in ancestors_dict:
+                    ancestors_dict[parent_id].children_id.append(id)
+                else:
+                    while parent_id is not None:
+                        parent_issue = redmine.issue.get(parent_id)
+                        parent_data = IssueData()
+                        parent_data.id          = parent_issue.id
+                        parent_data.subject     = parent_issue.subject
+                        parent_data.assigned_to = parent_issue.assigned_to.name if hasattr(parent_issue, 'assigned_to') else None
+                        parent_data.start_date  = parent_issue.start_date if hasattr(parent_issue, 'start_date') else None
+                        parent_data.due_date    = parent_issue.due_date if hasattr(parent_issue, 'due_date') else None
+                        parent_data.closed_on   = parent_issue.closed_on if hasattr(parent_issue, 'closed_on') else None
+                        parent_data.done_ratio  = parent_issue.done_ratio if hasattr(parent_issue, 'done_ratio') else None
+                        parent_data.parent_id   = parent_issue.parent.id if hasattr(parent_issue, 'parent') else None
+                        ancestors_dict[parent_id] = parent_data
 
-    Returns:
-        issue: The topmost parent issue object
-    """
+                        ancestors_dict[parent_id].children_id.append(id)
+                        parent_id = parent_data.parent_id
+        return ancestors_dict
+    except Exception as e:
+        logger.error(f'Redmine error : {e}')
+        return None
 
-    if hasattr(issue, 'parent'):
-        parent_issue = get_issue(redmine, issue.parent.id)
-        return get_topmost(redmine, parent_issue)
-    else:
-        # This is a topmost issue
-        return issue
-
-def has_targeted_descendant(redmine, issue) -> bool:
-    """
-    Check if the issue itself is a target or has any targeted descendant issues.
-
-    Args:
-        redmine (Redmine): Redmine instance
-        issue (issue): Redmine issue object
-
-    Returns:
-        bool: True if the issue is a target or has targeted descendant issues, False otherwise
-    """
-
-    if issue.id in targeted_id:
-        # This issue is a target issue
-        return True
-
-    if issue.children.total_count > 0:
-        for child in issue.children:
-            if child.id in targeted_id:
-                return True
-
-        for child in issue.children:
-            child_issue = get_issue(redmine, child.id)
-            # Recursive call to check if the child issue is a target or has targeted descendant
-            if has_targeted_descendant(redmine, child_issue):
-                return True
-
-    return False
-
-def process_descendant(redmine, ws, issue, indent: int, row: int) -> int:
-    """
-    Process the issue and its descendant.
-
-    Args:
-        redmine (Redmine): Redmine instance
-        ws (worksheet): excel worksheet
-        issue (issue): Redmine issue object
-        indent (int): Indentation level for the issue
-        row (int): Current row number in the worksheet
-
-    Returns:
-        int: Updated row number after processing the issue and its descendants
-    """
-
-    if has_targeted_descendant(redmine, issue):
-        row = write_issue(ws, issue, indent, row)
-
-        if issue.children.total_count > 0:
-            for child in issue.children:
-                child_issue = get_issue(redmine, child.id)
-                row = process_descendant(redmine, ws, child_issue, indent+2, row)
-
-    return row
-
-def regist_issue(redmine, ws, issue, indent: int, row: int, include_parent: bool) -> int:
-    """
-    Register issue to excel worksheet.
-    
-    - If the issue has parent, find the topmpst parent issue and process from it.
-    - If the issue doesn't have parent but has children, process this issue as the topmost issue.
-    - If the issue has neither parent nor children, write this issue to excel worksheet.
-
-    Args:
-        redmine (Redmine): Redmine instance
-        ws (worksheet): excel worksheet
-        issue (issue): Redmine issue object
-        indent (int): Indentation level for the issue
-        row (int): Current row number in the worksheet
-        include_parent (bool): Include parent even it is not a target issue
-
-    Returns:
-        int: Updated row number after processing the issue and its descendants
-    """
-
-    if issue.id in registered_id:
-        return row
-
-    elif include_parent and hasattr(issue, 'parent'):
-        # has parent
-        topmost = get_topmost(redmine, issue)
-        row = process_descendant(redmine, ws, topmost, indent, row)
-
-    elif issue.children.total_count > 0:
-        # doesn't have parent but has children
-        row = process_descendant(redmine, ws, issue, indent, row)
-
-    else:
-        # no parent, no children
-        # Write issue information to the worksheet
-        row = write_issue(ws, issue, indent, row)
-
-    return row
+def get_topmost_id(id, issues_dict) -> int:
+    topmost_id = id
+    while issues_dict[topmost_id].parent_id is not None:
+        topmost_id = issues_dict[topmost_id].parent_id
+    return topmost_id
 
 def main() -> None:
     redmine = Redmine(config.url, username=config.username, password=config.password)
@@ -460,25 +389,27 @@ def main() -> None:
     if config.fixed_version_id:
         filter['fixed_version_id'] = config.fixed_version_id
 
-    # Search filter conditions
-    issues = redmine.issue.filter(**filter)
-
-    # Must call something to expand
-    try:
-        issue = issues[0]
-    except Exception as e:
-        logger.error(f'Redmine error : {e}')
+    # get issues according to the specified filter condition
+    issues_dict = get_filter_issues(redmine, filter)
+    if issues_dict is None:
         return
-    # Number of items that match the search criteria
-    total = issues.total_count
 
+    # Number of items that match the search criteria
+    total = len(issues_dict)
+    if total == 0:
+        logger.info('No issues found with the specified filter.')
+        return
     logger.info(f'Total found issues : {total}')
 
-    if total == 0:
-        return
+    # get ancestor(not only parent) issues associated with the target issues
+    ancestors_dict = get_ancestor_issues(redmine, issues_dict)
 
-    for issue in issues:
-        targeted_id.append(issue.id)
+    # marge ancestor dict to issues dict
+    if ancestors_dict is not None:
+        issues_dict.update(ancestors_dict)
+        ancestors_dict.clear()
+        # re-calc total issues to process
+        total = len(issues_dict)
 
     wb = openpyxl.Workbook()
     ws = wb.worksheets[0]
@@ -504,16 +435,36 @@ def main() -> None:
 
     row = 3
     progress = 0
-    include_parent = config.include_parent
-    for issue in issues:
-        # Progress display
-        p = int(progress*100/total)
-        print(f'\r [ {p:2}% ] done.', end='')
+
+    global registered_id
+    for id, issue_data in issues_dict.items():
+        def display_progress(progress, total):
+            p = int(progress*100/total)
+            print(f'\r [ {p:2}% ] done.', end='')
+
+        if issue_data.id in registered_id:
+            continue
+
+        topmost_id = get_topmost_id(id, issues_dict)
+        row = write_issue(ws, issues_dict[topmost_id], 0, row)
         progress += 1
+        display_progress(progress, total)
 
-        row = regist_issue(redmine, ws, issue, 0, row, include_parent)
-
-    print('\r [ 100% ] done.')
+        if topmost_id == id:
+            continue
+        else:
+            # process children tree recursively
+            def process_children_tree(parent_id: int, indent: int, row: int) -> int:
+                nonlocal progress
+                children_list = issues_dict[parent_id].children_id
+                for child_id in children_list:
+                    row = write_issue(ws, issues_dict[child_id], indent, row)
+                    progress += 1
+                    display_progress(progress, total)
+                    if issues_dict[child_id].children_id:
+                        row = process_children_tree(child_id, indent+1, row)
+                return row
+            row = process_children_tree(topmost_id, 1, row)
 
     t1 = datetime.datetime.now()
     logger.info(f'Total process time : {t1-t0}')
@@ -538,7 +489,6 @@ def main() -> None:
             yn = input().upper()
             if yn == 'N':
                 break 
-
 
 if __name__ == '__main__':
     if config.load_config_from_toml():

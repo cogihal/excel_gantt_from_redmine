@@ -177,7 +177,7 @@ def write_issue(ws, issue_data, indent: int, row: int) -> int:
     ws.cell(row, 2).number_format = openpyxl.styles.numbers.FORMAT_GENERAL
     ws.cell(row, 2).value = issue_data.subject
     ws.cell(row, 2).font = Font(name=fontname)
-    ws.cell(row, 2).alignment = Alignment(indent=indent, vertical='center')
+    ws.cell(row, 2).alignment = Alignment(indent=indent*2, vertical='center')
     if id not in targeted_id:
         # This is not a target issue in this filter, it should be a parent issue of one of the target issue
         ws.cell(row, 2).fill = PatternFill(patternType='solid', fgColor='D9D9D9')
@@ -328,11 +328,15 @@ def get_filter_issues(redmine, filter: dict) -> (dict|None):
             issue_data.closed_on   = issue.closed_on if hasattr(issue, 'closed_on') else None
             issue_data.done_ratio  = issue.done_ratio if hasattr(issue, 'done_ratio') else None
             issue_data.parent_id   = issue.parent.id if hasattr(issue, 'parent') else None
+            
             issues_dict[issue.id] = issue_data
 
             targeted_id.append(issue.id)
 
-        return issues_dict
+        if len(issues_dict) == 0:
+            return None
+        else:
+            return issues_dict
     except Exception as e:
         logger.error(f'Redmine error : {e}')
         return None
@@ -372,11 +376,16 @@ def get_ancestor_issues(redmine, issues_dict: dict) -> (dict|None):
                         parent_data.closed_on   = parent_issue.closed_on if hasattr(parent_issue, 'closed_on') else None
                         parent_data.done_ratio  = parent_issue.done_ratio if hasattr(parent_issue, 'done_ratio') else None
                         parent_data.parent_id   = parent_issue.parent.id if hasattr(parent_issue, 'parent') else None
+                        
                         ancestors_dict[parent_id] = parent_data
 
                         ancestors_dict[parent_id].children_id.append(id)
-                        parent_id = parent_data.parent_id
-        return ancestors_dict
+                        parent_id = parent_data.parent_id # re-set parent_id for next loop
+        
+        if len(ancestors_dict) == 0:
+            return None
+        else:
+            return ancestors_dict
     except Exception as e:
         logger.error(f'Redmine error : {e}')
         return None
@@ -414,14 +423,12 @@ def main() -> None:
 
     # Get issues according to the specified filter condition
     issues_dict = get_filter_issues(redmine, filter)
-    if issues_dict is None:
+    if issues_dict is None or len(issues_dict) == 0:
+        logger.info('No issues found with the specified filter.')
         return
 
     # Number of items that match the search criteria
     total = len(issues_dict)
-    if total == 0:
-        logger.info('No issues found with the specified filter.')
-        return
     logger.info(f'Total found issues : {total}')
 
     # get ancestor(not only parent) issues associated with the target issues

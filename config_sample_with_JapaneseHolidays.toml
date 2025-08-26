@@ -28,8 +28,6 @@ redmine.filter.author_id        = ""   # Get issues which are authored by the gi
 redmine.filter.assigned_to_id   = ""   # Get issues which are assigned to the given user id
 redmine.filter.fixed_version_id = ""   # Get issues with given version id
 
-redmine.filter.include_parent = false # Include parent issue even if the parent is not a target
-
 spreadsheet.font_name = "Meiryo UI"
 spreadsheet.tab_title = "modify as you like"
 # If 'tab_title' is not specified, 'project_name' is used instead.

@@ -27,7 +27,6 @@ class Config:
             self.author_id        = None
             self.assigned_to_id   = None
             self.fixed_version_id = None
-            self.include_parent   = None
 
     def __init__(self):
         self._redmine = self.Redmine()
@@ -64,14 +63,12 @@ class Config:
             self._redmine.password = account.get('password', None)
 
             self._filtter.sort = filter.get('sort', None)
-            self._filtter.issue_id = filter.get('issue_id', None)
+            self._filtter.issue_id = filter.get('issue_id', None).replace(' ', '') if filter.get('issue_id', None) else None
             self._filtter.query_id = filter.get('query_id', None)
             self._filtter.tracker_id = filter.get('tracker_id', None)
             self._filtter.status_id = filter.get('status_id', None)
             self._filtter.assigned_to_id = filter.get('assigned_to_id', None)
             self._filtter.fixed_version_id = filter.get('fixed_version_id', None)
-
-            self._filtter.include_parent = filter.get('include_parent', False)
 
             self._font_name = spreadsheet.get('font_name', None)
             self._tab_title = spreadsheet.get('tab_title', None)
@@ -200,10 +197,6 @@ class Config:
     @property
     def fixed_version_id(self):
         return self._filtter.fixed_version_id
-
-    @property
-    def include_parent(self):
-        return self._filtter.include_parent
 
     @property
     def font_name(self):

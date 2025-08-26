@@ -62,9 +62,6 @@ redmine.filter.author_id  = Get issues which are authored by the given user id
 redmine.filter.assigned_to_id   = Get issues which are assigned to the given user id
 redmine.filter.fixed_version_id = Get issues with given version id
 
-redmine.filter.include_parent = Set true if needs to include parent issue even if the parent is not a target
-                                If the parent has many children, it will take long if it is set true
-
 spreadsheet.font_name = font name that you want to use to excel : ex. "Meiryo UI"
 spreadsheet.tab_title = excel tab title string : ex. "Project Blue"
                         If 'tab_title' is not specified, 'project_name' is used instead.
@@ -98,9 +95,3 @@ If this is a private query, it needs to login to redmine because the private que
 It depends on if you need to login to extract issues from Redmine or not.  
 If you don't need to login, set `redmine.account.need_login` to `false`. In this case, `redmine.account.username` and `redmine.account.password` will be ignored even those are set.  
 If you need to login, set `redmine.account.need_login` to `true` and fill in the username and password. If `redmine.account.username` and/or `redmine.account.password` are empty, the script will prompt you to input them.
-
-## Parent issue
-
-If 'redmine.filter.include_parent' is set true, when a ticket is extracted based on the filter, its parent ticket is also searched and write to excel if exist. If the parent ticket is not targeted of the filter, its "subject" cell is filled gray.
-
-If 'redmine.filter.include_parent' is set true and some parent has many children, it will take long to extracted issues.

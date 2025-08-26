@@ -27,13 +27,13 @@ logger = init_logger('excel_gantt_from_redmine', logfile_path='./log/excel_gantt
 
 def is_holiday(date: datetime.date) -> bool:
     """
-    Check if the given date is a holiday or weekend.
+    Check if the given date is a holiday, weekend or weekday.
 
     Args:
         date (datetime.date): The date to check.
 
     Returns:
-        bool: True if the date is a holiday, saturday, or sunday, False otherwise.
+        bool: True if the date is a holiday, saturday, or sunday, False weekday.
     """
 
     w = date.weekday()  # day of week (0:monday - 6:sunday)
@@ -300,6 +300,18 @@ def set_conditional_format(ws, min_row: int, max_row: int) -> None:
         r += 1
 
 def get_filter_issues(redmine, filter: dict) -> (dict|None):
+    """
+    Get issues from Redmine according to the specified filter conditions.
+
+    Args:
+        redmine (Redmine): Redmine object
+        filter (dict): Filter conditions for searching issues
+    
+    Returns:
+        dict: Dictionary of issues with issue ID as key and IssueData object as value
+        None: If an error occurs during the Redmine API call or no issues are found
+    """
+
     global targeted_id
     try:
         # Search filter conditions
@@ -326,6 +338,18 @@ def get_filter_issues(redmine, filter: dict) -> (dict|None):
         return None
 
 def get_ancestor_issues(redmine, issues_dict: dict) -> (dict|None):
+    """
+    Get ancestor issues (not only parent) associated with the target issues.
+
+    Args:
+        redmine (Redmine): Redmine object
+        issues_dict (dict): Dictionary of target issues
+
+    Returns:
+        dict: Dictionary of ancestor issues with issue ID as key and IssueData object as value
+        None: If an error occurs during the Redmine API call or no ancestor issues are found
+    """
+
     try:
         ancestors_dict = dict()
 
@@ -388,7 +412,7 @@ def main() -> None:
     if config.fixed_version_id:
         filter['fixed_version_id'] = config.fixed_version_id
 
-    # get issues according to the specified filter condition
+    # Get issues according to the specified filter condition
     issues_dict = get_filter_issues(redmine, filter)
     if issues_dict is None:
         return
@@ -435,6 +459,7 @@ def main() -> None:
     row = 3
     progress = 0
 
+    # Write issues to excel worksheet
     global registered_id
     for id, issue_data in issues_dict.items():
         def display_progress(progress, total):
@@ -476,6 +501,7 @@ def main() -> None:
     # Conditional formatting
     set_conditional_format(ws, 3, row-1)
 
+    # Save excel
     while True:
         print(" Input file name (It doesn't need '.xlsx' extention.) : ", end='')
         f = input()

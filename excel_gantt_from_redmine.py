@@ -22,7 +22,6 @@ from logging_helper import init_logger
 config = Config()
 targeted_id = []  # Issue ID list those are extracted to process
 registered_id = []  # Issue ID list those have been registered in excel already
-temp_issue = dict() # Temporary storage for issues to avoid redundant API calls
 
 logger = init_logger('excel_gantt_from_redmine', logfile_path='./log/excel_gantt_from_redmine.log')
 

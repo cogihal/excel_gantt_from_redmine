@@ -485,9 +485,10 @@ def main() -> None:
             continue
 
         topmost_id = get_topmost_id(id, issues_dict)
-        row = write_issue(ws, issues_dict[topmost_id], 0, row)
-        progress += 1
-        display_progress(progress, total)
+        if topmost_id not in registered_id:
+            row = write_issue(ws, issues_dict[topmost_id], 0, row)
+            progress += 1
+            display_progress(progress, total)
 
         if topmost_id == id:
             continue
@@ -497,9 +498,10 @@ def main() -> None:
                 nonlocal progress
                 children_list = issues_dict[parent_id].children_id
                 for child_id in children_list:
-                    row = write_issue(ws, issues_dict[child_id], indent, row)
-                    progress += 1
-                    display_progress(progress, total)
+                    if child_id not in registered_id:
+                        row = write_issue(ws, issues_dict[child_id], indent, row)
+                        progress += 1
+                        display_progress(progress, total)
                     if issues_dict[child_id].children_id:
                         row = process_children_tree(child_id, indent+1, row)
                 return row

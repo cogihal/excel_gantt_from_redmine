@@ -78,7 +78,7 @@ holidays = [
 
 At least the following items must be set in 'config.toml'.
 
-```toml
+```
   redmine.url
   redmine.project_name
   spreadsheet.gannt.start_date

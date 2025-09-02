@@ -37,7 +37,7 @@ See the section [Authentication](https://www.redmine.org/projects/redmine/wiki/R
 
 Prepare 'config.toml' by referring the sample TOML file. The configuration file name must be 'config.toml'.
 
-```toml
+```
 # config.toml
 
 redmine.url = redmine server URL : ex. "https://redmine.org/"

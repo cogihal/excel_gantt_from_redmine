@@ -366,6 +366,11 @@ def get_ancestor_issues(redmine, issues_dict: dict) -> (dict|None):
                     ancestors_dict[parent_id].children_id.append(id)
                 else:
                     while parent_id is not None:
+                        if parent_id in ancestors_dict:
+                            # parent has already existed in ancestors_dict, just add child id
+                            ancestors_dict[parent_id].children_id.append(id)
+                            break
+
                         parent_issue = redmine.issue.get(parent_id)
                         parent_data = IssueData()
                         parent_data.id          = parent_issue.id
@@ -380,7 +385,10 @@ def get_ancestor_issues(redmine, issues_dict: dict) -> (dict|None):
                         ancestors_dict[parent_id] = parent_data
 
                         ancestors_dict[parent_id].children_id.append(id)
+
+                        id = parent_id                    # re-set id for next loop
                         parent_id = parent_data.parent_id # re-set parent_id for next loop
+                        pass
         
         if len(ancestors_dict) == 0:
             return None
